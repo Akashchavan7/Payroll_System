@@ -1,8 +1,76 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { Department, DepartmentService } from '../Services/Department-serives/department.service';
+
+declare var bootstrap: any;
 
 @Component({
   selector: 'app-department',
   templateUrl: './department.component.html',
-  styleUrls: ['./department.component.scss']
+  styleUrls: []
 })
-export class DepartmentComponent {}
+export class DepartmentComponent implements OnInit {
+
+  departments: Department[] = [];
+  selectedDepartmentId: number | null = null;
+
+  constructor(
+    private departmentService: DepartmentService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras?.state as { message?: string };
+
+    if (state?.message === 'added') {
+      alert('✅ Department successfully added!');
+    } else if (state?.message === 'updated') {
+      alert('✅ Department successfully updated!');
+    }
+
+    this.getAllDepartments();
+  }
+
+  getAllDepartments(): void {
+    this.departmentService.getDepartments().subscribe({
+      next: (data) => {
+        console.log('Fetched departments:', data); // ✅ Logging
+        this.departments = data;
+      },
+      error: (err) => {
+        console.error('Failed to load departments:', err);
+      }
+    });
+  }
+
+  confirmDelete(id: number): void {
+    this.selectedDepartmentId = id;
+  }
+
+  deleteDepartment(): void {
+    if (this.selectedDepartmentId === null) return;
+
+    this.departmentService.deleteDepartment(this.selectedDepartmentId).subscribe({
+      next: () => {
+        this.departments = this.departments.filter(dept => dept.id !== this.selectedDepartmentId);
+        this.selectedDepartmentId = null;
+
+        const modalElement = document.getElementById('delete_modal');
+        if (modalElement) {
+          const modal = bootstrap.Modal.getInstance(modalElement);
+          modal?.hide();
+        }
+
+        console.log('Department deleted successfully');
+      },
+      error: (err) => {
+        alert('Error deleting department: ' + (err?.message || 'Unknown error'));
+      }
+    });
+  }
+
+  editDepartment(id: number): void {
+    this.router.navigate(['/add-department', id]);
+  }
+}
