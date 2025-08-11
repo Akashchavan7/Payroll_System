@@ -31,7 +31,7 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'employees', component: EmployeesComponent },
-      { path: 'add-employee', component: AddEmployeeComponent },
+  { path: 'add-employee', component: AddEmployeeComponent },
   { path: 'add-employee/:id', component: AddEmployeeComponent },
   { path: 'departments', component: DepartmentComponent },
   { path: 'leaves', component: LeavesComponent },
@@ -39,7 +39,8 @@ const routes: Routes = [
   { path: 'charts/apex', component: ChartApexComponent },
   { path: 'report-calendar', component: ReportCalendarComponent },
   { path: 'nav-bar', component: NavBarComponent },
-    { path: 'add-department', component: AddDepartmentComponent },
+  { path: 'add-department', component: AddDepartmentComponent },
+  { path: 'add-department/:id', component: AddDepartmentComponent },
 
   {
     path: 'reports',

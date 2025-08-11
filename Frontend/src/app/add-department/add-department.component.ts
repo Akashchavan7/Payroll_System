@@ -2,71 +2,89 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DepartmentService } from '../Services/Department-serives/department.service';
+import { Department } from '../Services/Department-serives/department.service';
 
 @Component({
   selector: 'app-add-department',
   templateUrl: './add-department.component.html',
+  styleUrls: []
 })
 export class AddDepartmentComponent implements OnInit {
   departmentForm!: FormGroup;
-  deptId?: number;
   isEditMode = false;
+  departmentId!: number;
 
   constructor(
     private fb: FormBuilder,
+    private departmentService: DepartmentService,
     private route: ActivatedRoute,
-    private deptService: DepartmentService,
     private router: Router
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    // Initialize form
     this.departmentForm = this.fb.group({
       name: ['', Validators.required],
-      status: ['active', Validators.required],
-      description: [''],
+      status: ['active'],
+      description: ['']
     });
 
-    this.deptId = Number(this.route.snapshot.paramMap.get('id'));
-    this.isEditMode = !!this.deptId;
-
-    if (this.isEditMode) {
-      this.loadDepartment();
-    }
-  }
-
-  loadDepartment() {
-    this.deptService.getDepartmentById(this.deptId!).subscribe(dept => {
-      this.departmentForm.patchValue({
-        name: dept.name,
-        status: dept.status,
-        description: dept.description,
-      });
+    // Check if we are in edit mode
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.isEditMode = true;
+        this.departmentId = +id;
+        this.loadDepartment(this.departmentId);
+      }
     });
   }
 
-  onSubmit() {
+  // Load existing department data for editing
+  loadDepartment(id: number): void {
+    this.departmentService.getDepartmentById(id).subscribe({
+      next: (department: Department) => {
+        this.departmentForm.patchValue(department);
+      },
+      error: (err) => {
+        console.error('Error loading department', err);
+        alert('Unable to load department data');
+      }
+    });
+  }
+
+  // Form submit handler
+  onSubmit(): void {
     if (this.departmentForm.invalid) {
+      this.departmentForm.markAllAsTouched();
       return;
     }
 
-    const formData = this.departmentForm.value;
+    const departmentData = this.departmentForm.value;
 
     if (this.isEditMode) {
-      this.deptService.updateDepartment(this.deptId!, formData).subscribe(() => {
-        alert('Department updated successfully!');
-        this.router.navigate(['/department'], { state: { message: 'updated' } });
-      }, error => {
-        alert('Error updating department.');
-        console.error(error);
+      // Update existing department
+      this.departmentService.updateDepartment(this.departmentId, departmentData).subscribe({
+        next: () => {
+          alert('✅ Department updated successfully!');
+          this.router.navigate(['/departments'], { state: { message: 'updated' } });
+        },
+        error: (err) => {
+          console.error('Update failed', err);
+          alert('❌ Failed to update department.');
+        }
       });
     } else {
-      this.deptService.addDepartments(formData).subscribe((res) => {
-        console.log('Department added:', res); // ✅ Logging
-        alert('Department added successfully!');
-        this.router.navigate(['/department'], { state: { message: 'added' } });
-      }, error => {
-        alert('Error adding department.');
-        console.error(error);
+      // Add new department
+      this.departmentService.addDepartment(departmentData).subscribe({
+        next: () => {
+          alert('✅ Department added successfully!');
+          this.router.navigate(['/departments'], { state: { message: 'added' } });
+        },
+        error: (err) => {
+          console.error('Add failed', err);
+          alert('❌ Failed to add department.');
+        }
       });
     }
   }
